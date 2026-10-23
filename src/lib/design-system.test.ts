@@ -13,7 +13,7 @@ describe("design system", () => {
   });
   it("tokens include each palette role with a readable foreground", () => {
     const t = buildTokens({ name: "x", rationale: "", colors: [{ name: "Ink", hex: "#111111", role: "Primary", usage: [] }] }, DEFAULT_OPTIONS);
-    expect(t.color.primary).toBe("#111111");
+    expect(t.color['primary']).toBe("#111111");
     expect(t.color["primary-foreground"]).toBe("#FFFFFF");
   });
 });

@@ -139,7 +139,7 @@ export function DesignSystem({ palette }: { palette: Palette }) {
       </section>
 
       {/* Export */}
-      <section className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card p4 px-4 py-3">
+      <section className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card px-4 py-3">
         <span className="mr-auto text-sm">Download design system</span>
         <Button size="sm" onClick={() => downloadText(JSON.stringify(tokens, null, 2), `${file}.tokens.json`, "application/json")}><Download className="h-3.5 w-3.5" />Tokens JSON</Button>
         <Button size="sm" variant="secondary" onClick={() => downloadText(toCss(tokens), `${file}.css`, "text/css")}><Download className="h-3.5 w-3.5" />CSS variables</Button>
