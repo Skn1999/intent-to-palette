@@ -215,7 +215,8 @@ function Index() {
       </aside>
 
       {/* Main */}
-      <main className={`flex-1 overflow-y-auto transition-opacity animate-in fade-in duration-700 ${loading ? "opacity-50" : ""}`}>
+      <div className="relative flex-1 overflow-hidden">
+      <main className="h-full overflow-y-auto animate-in fade-in duration-700">
         <div className="mx-auto max-w-5xl space-y-8 px-8 py-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -330,31 +331,49 @@ function Index() {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 border-t border-border pt-6">
-            <span className="mr-1 text-xs text-muted-foreground">Refine</span>
-            {REFINES.map((x) => <Button key={x} variant="outline" size="sm" disabled={loading} onClick={() => run(x)}>{x}</Button>)}
-            <span className="mx-2 h-5 w-px bg-border" />
-            <span className="mr-1 text-xs text-muted-foreground">Export</span>
-            <Button variant="secondary" size="sm" onClick={() => copy(`:root {\n${palette!.colors.map((c) => `  --color-${slug(c.role)}: ${c.hex};`).join("\n")}\n}`, "CSS variables")}>CSS</Button>
-            <Button variant="secondary" size="sm" onClick={() => copy(`colors: {\n${palette!.colors.map((c) => `  "${slug(c.role)}": "${c.hex}",`).join("\n")}\n}`, "Tailwind colors")}>Tailwind</Button>
-            <Button variant="secondary" size="sm" onClick={() => copy(JSON.stringify(palette, null, 2), "JSON")}>JSON</Button>
-          </div>
         </div>
       </main>
+      {loading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 text-sm shadow-lg">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" /> Mixing colors…
+          </div>
+        </div>
+      )}
+      </div>
 
-      {/* Versions */}
-      <aside className={`flex shrink-0 flex-col border-l border-border bg-card transition-[width] duration-300 ${versionsOpen ? "w-60" : "w-12"}`}>
+      {/* Right tray */}
+      <aside className={`flex shrink-0 flex-col border-l border-border bg-card transition-[width] duration-300 ${versionsOpen ? "w-64" : "w-12"}`}>
         <div className="flex items-center justify-between border-b border-border px-3 py-4">
-          {versionsOpen && <span className="flex items-center gap-2 text-sm font-medium"><History className="h-4 w-4 text-muted-foreground" />Versions <span className="text-muted-foreground">{history.length}</span></span>}
-          <button aria-label="Toggle versions" onClick={() => setVersionsOpen((o) => !o)} className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground">
+          {versionsOpen && <span className="text-sm font-medium">Controls</span>}
+          <button aria-label="Toggle panel" onClick={() => setVersionsOpen((o) => !o)} className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground">
             {versionsOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
         </div>
+        {versionsOpen && (
+          <div className="space-y-4 border-b border-border p-3">
+            <div>
+              <p className="mb-2 text-xs text-muted-foreground">Refine</p>
+              <div className="flex flex-wrap gap-1.5">
+                {REFINES.map((x) => <Button key={x} variant="outline" size="sm" className="h-7 px-2 text-xs" disabled={loading} onClick={() => run(x)}>{x}</Button>)}
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-xs text-muted-foreground">Export</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(`:root {\n${palette!.colors.map((c) => `  --color-${slug(c.role)}: ${c.hex};`).join("\n")}\n}`, "CSS variables")}>CSS</Button>
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(`colors: {\n${palette!.colors.map((c) => `  "${slug(c.role)}": "${c.hex}",`).join("\n")}\n}`, "Tailwind colors")}>Tailwind</Button>
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(JSON.stringify(palette, null, 2), "JSON")}>JSON</Button>
+              </div>
+            </div>
+          </div>
+        )}
+        {versionsOpen && <p className="flex items-center gap-2 px-3 pt-3 text-xs text-muted-foreground"><History className="h-3.5 w-3.5" />Versions · {history.length}</p>}
         <div className="flex-1 space-y-1.5 overflow-y-auto p-2">
           {history.map((h, i) => i).reverse().map((i) => {
             const h = history[i]!;
             return (
-              <button key={i} onClick={() => { setCurrent(i); setSelected(0); }} title={`v${i + 1} · ${h.label}`}
+              <button key={i} disabled={loading} onClick={() => { setCurrent(i); setSelected(0); }} title={`v${i + 1} · ${h.label}`}
                 className={`w-full rounded-md border text-left transition-colors ${versionsOpen ? "p-2" : "p-1"} ${i === current ? "border-ring bg-secondary" : "border-transparent hover:bg-secondary/60"}`}>
                 <div className={`flex overflow-hidden rounded ${versionsOpen ? "h-5" : "h-6 flex-col"}`}>
                   {h.palette.colors.map((c, j) => <div key={j} className="flex-1" style={{ background: c.hex }} />)}
