@@ -85,7 +85,7 @@ function Index() {
   function fixAccess() {
     if (!palette) return;
     const fixed = { ...palette, colors: fixWcag(palette.colors) };
-    if (fixed.colors.every((c, i) => c.hex === palette.colors[i].hex)) return toast.success("Already WCAG AA compliant");
+    if (fixed.colors.every((c, i) => c.hex === palette.colors[i]?.hex)) return toast.success("Already WCAG AA compliant");
     push(fixed, "WCAG fixed");
     toast.success("Adjusted colors to meet WCAG AA");
   }
@@ -255,7 +255,7 @@ function Index() {
                     ["Text on surface", text, surface],
                     ["Label on primary", readableOn(primary), primary],
                     ["Accent on background", accent, bg],
-                  ].map(([l, a, b]) => {
+                  ].map(([l, a, b]: string[]) => {
                     const r = contrast(a, b);
                     return (
                       <div key={l} className="flex items-center justify-between border-b border-border py-2">
