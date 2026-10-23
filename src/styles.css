@@ -65,7 +65,7 @@
 
 :root {
   --radius: 0.25rem;
-  --font-display: "Inter", system-ui, sans-serif;
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
   --font-sans: "Inter", system-ui, sans-serif;
   --background: oklch(0.975 0.008 85);
   --foreground: oklch(0.18 0.01 60);
@@ -146,5 +146,5 @@
     color: var(--color-foreground);
     font-family: var(--font-sans);
   }
-  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.035em; font-weight: 600; }
+  h1, h2, h3 { font-family: var(--font-display); font-optical-sizing: auto; letter-spacing: -0.015em; font-weight: 500; }
 }
