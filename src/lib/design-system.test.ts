@@ -17,3 +17,14 @@ describe("design system", () => {
     expect(t.color["primary-foreground"]).toBe("#FFFFFF");
   });
 });
+
+import { toDtcg, toSketchPalette } from "./design-system";
+describe("design tool exports", () => {
+  const p = { name: "x", rationale: "", colors: [{ name: "Ink", hex: "#FF0000", role: "Primary", usage: [] }] };
+  it("DTCG tokens carry $type and $value", () => {
+    expect(toDtcg(buildTokens(p, DEFAULT_OPTIONS)).color["primary"]).toEqual({ $type: "color", $value: "#FF0000" });
+  });
+  it("Sketch palette uses 0-1 channels", () => {
+    expect(toSketchPalette(p).colors[0]).toMatchObject({ red: 1, green: 0, blue: 0, alpha: 1 });
+  });
+});

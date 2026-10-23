@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { Palette } from "@/lib/palette.functions";
 import { readableOn, slug } from "@/lib/color";
 import {
-  buildTokens, DEFAULT_OPTIONS, downloadText, FONT_PAIRS, radiusScale, RATIOS, spacingScale, toCss, toTailwind, typeScale, type DSOptions,
+  buildTokens, DEFAULT_OPTIONS, downloadText, FONT_PAIRS, radiusScale, RATIOS, spacingScale, toCss, toDtcg, toSketchPalette, toTailwind, typeScale, type DSOptions,
 } from "@/lib/design-system";
 
 const sel = "h-8 w-full rounded-md border border-input bg-muted/50 px-2 text-sm outline-none focus:border-ring";
@@ -144,7 +144,11 @@ export function DesignSystem({ palette }: { palette: Palette }) {
         <Button size="sm" onClick={() => downloadText(JSON.stringify(tokens, null, 2), `${file}.tokens.json`, "application/json")}><Download className="h-3.5 w-3.5" />Tokens JSON</Button>
         <Button size="sm" variant="secondary" onClick={() => downloadText(toCss(tokens), `${file}.css`, "text/css")}><Download className="h-3.5 w-3.5" />CSS variables</Button>
         <Button size="sm" variant="secondary" onClick={() => downloadText(toTailwind(tokens), `${file}.tailwind.css`, "text/css")}><Download className="h-3.5 w-3.5" />Tailwind theme</Button>
+        <span className="mx-1 h-5 w-px bg-border" />
+        <Button size="sm" variant="secondary" title="Import with Tokens Studio or a variables-import plugin" onClick={() => downloadText(JSON.stringify(toDtcg(tokens), null, 2), `${file}.figma-tokens.json`, "application/json")}><Download className="h-3.5 w-3.5" />Figma theme</Button>
+        <Button size="sm" variant="secondary" title="Open with the Sketch Palettes plugin" onClick={() => downloadText(JSON.stringify(toSketchPalette(palette), null, 2), `${file}.sketchpalette`, "application/json")}><Download className="h-3.5 w-3.5" />Sketch palette</Button>
       </section>
+      <p className="-mt-6 px-1 text-xs text-muted-foreground">Figma: import the JSON with the Tokens Studio plugin (or any variables-import plugin). Sketch: open the .sketchpalette with the Sketch Palettes plugin.</p>
     </div>
   );
 }
