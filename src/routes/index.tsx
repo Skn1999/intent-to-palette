@@ -255,7 +255,7 @@ function Index() {
                     ["Text on surface", text, surface],
                     ["Label on primary", readableOn(primary), primary],
                     ["Accent on background", accent, bg],
-                  ].map(([l, a, b]: string[]) => {
+                  ] as [string, string, string][]).map(([l, a, b]) => {
                     const r = contrast(a, b);
                     return (
                       <div key={l} className="flex items-center justify-between border-b border-border py-2">
