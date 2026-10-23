@@ -123,6 +123,15 @@ function Index() {
           id="intent"
           value={intent}
           onChange={(e) => setIntent(e.target.value)}
+          onPaste={(e) => {
+            const files = Array.from(e.clipboardData.files).filter((f) => f.type.startsWith("image/"));
+            if (!files.length) return;
+            e.preventDefault();
+            if (images.length >= 6) { toast.error("Up to 6 images"); return; }
+            const dt = new DataTransfer();
+            files.forEach((f) => dt.items.add(f));
+            addFiles(dt.files).then(() => toast.success(`Added ${files.length} image${files.length > 1 ? "s" : ""}`));
+          }}
           rows={started ? 5 : 4}
           placeholder="Calm fintech onboarding — trustworthy, but warm and human."
           className="w-full resize-none rounded-md border border-input bg-muted/50 p-3 text-sm outline-none transition-colors placeholder:text-muted-foreground/60 focus:border-ring focus:bg-muted"
