@@ -17,7 +17,7 @@ export const PaletteSchema = z.object({
       name: z.string(),
       hex: z.string(),
       role: z.string(),
-      reason: z.string(),
+      usage: z.array(z.string()),
     }),
   ),
 });
@@ -54,7 +54,7 @@ export const generatePalette = createServerFn({ method: "POST" })
 
     const result = streamText({
       model: provider.responses("openai/gpt-6-astra"),
-      system: `You are a senior color designer. Translate the user's intent and reference images into a cohesive, usable palette. Draw real cues from the images (dominant hues, mood, lighting). ${roles} Hex values must be 6-digit uppercase like #1A2B3C. Rationale: 2-3 sentences tying choices to intent and images. Each reason: one short sentence.`,
+      system: `You are a senior color designer. Translate the user's intent and reference images into a cohesive, usable palette. Draw real cues from the images (dominant hues, mood, lighting). ${roles} Hex values must be 6-digit uppercase like #1A2B3C. Rationale: 2-3 sentences tying choices to intent and images. For each color, usage: 2-4 very short usage tags (2-4 words each) saying where it fits, e.g. "Page background", "Primary buttons", "Accent highlights", "Body text", "Error states".`,
       messages: [{ role: "user", content }],
       output: Output.object({ schema: PaletteSchema }),
       providerOptions: {
