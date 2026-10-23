@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, ChevronLeft, ChevronRight, Copy, FolderOpen, History, ImagePlus, Loader2, Moon, Save, ShieldCheck, Sparkles, Sun, Trash2, X } from "lucide-react";
 import { loadWorks, removeVersion, storeWorks, upsertWork, type Work } from "@/lib/works";
+import { DesignSystem } from "@/components/DesignSystem";
 import { Button } from "@/components/ui/button";
 import { generatePalette, type Palette } from "@/lib/palette.functions";
 import { contrast, fixWcag, readableOn, slug } from "@/lib/color";
@@ -62,6 +63,7 @@ function Index() {
   const [current, setCurrent] = useState(-1);
   const [selected, setSelected] = useState(0);
   const [versionsOpen, setVersionsOpen] = useState(true);
+  const [view, setView] = useState<"palette" | "system">("palette");
   const [loading, setLoading] = useState(false);
   const [drag, setDrag] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -314,6 +316,16 @@ function Index() {
             <Button size="sm" variant="secondary" disabled={loading} onClick={fixAccess}><ShieldCheck className="h-3.5 w-3.5" />Fix WCAG Accessibility</Button>
           </div>
 
+          <div className="flex gap-1 border-b border-border">
+            {(["palette", "system"] as const).map((v) => (
+              <button key={v} onClick={() => setView(v)}
+                className={`-mb-px border-b-2 px-3 py-2 text-sm transition-colors ${view === v ? "border-primary text-foreground" : "border-transparent text-muted-foreground hover:text-foreground"}`}>
+                {v === "palette" ? "Palette" : "Design system"}
+              </button>
+            ))}
+          </div>
+
+          {view === "palette" ? (<>
           {/* Swatches */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {palette!.colors.map((c, i) => (
@@ -417,7 +429,7 @@ function Index() {
               })}
             </div>
           </div>
-
+          </>) : <DesignSystem palette={palette!} />}
         </div>
       </main>
       {loading && (
