@@ -250,7 +250,7 @@ function Index() {
                 </div>
                 <div className="space-y-2 text-sm">
                   <p className="font-medium">Contrast (WCAG AA ≥ 4.5)</p>
-                  {[
+                  {([
                     ["Text on background", text, bg],
                     ["Text on surface", text, surface],
                     ["Label on primary", readableOn(primary), primary],
