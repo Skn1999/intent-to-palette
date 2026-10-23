@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import type { Palette } from "@/lib/palette.functions";
 import { readableOn, slug } from "@/lib/color";
 import {
-  buildTokens, DEFAULT_OPTIONS, downloadText, FONT_PAIRS, radiusScale, RATIOS, spacingScale, toCss, toTailwind, typeScale, type DSOptions,
+  buildTokens, DEFAULT_OPTIONS, downloadText, FONT_PAIRS, radiusScale, RATIOS, spacingScale, toCss, toDtcg, toSketchPalette, toTailwind, typeScale, type DSOptions,
 } from "@/lib/design-system";
 
 const sel = "h-8 w-full rounded-md border border-input bg-muted/50 px-2 text-sm outline-none focus:border-ring";
