@@ -177,7 +177,7 @@ function Index() {
         <section>
           {!palette ? (
             <div className="flex h-full min-h-[420px] items-center justify-center rounded-sm border border-dashed border-input p-10 text-center">
-              <p className="max-w-xs font-display text-2xl text-muted-foreground">Your palette will appear here.</p>
+              <p className="max-w-xs text-2xl text-muted-foreground">Your palette will appear here.</p>
             </div>
           ) : (
             <div className={`space-y-10 transition-opacity ${loading ? "opacity-50" : ""}`}>
@@ -239,7 +239,7 @@ function Index() {
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="rounded-sm p-6" style={{ background: bg, color: text }}>
                   <p className="text-xs uppercase tracking-widest opacity-60">Preview</p>
-                  <h3 className="mt-2 text-2xl">Welcome aboard</h3>
+                  <h3 className="mt-2 font-sans text-2xl tracking-normal">Welcome aboard</h3>
                   <div className="mt-4 rounded-sm p-4" style={{ background: surface }}>
                     <p className="text-sm opacity-80">Your first goal is ready. Let's set it up together.</p>
                     <div className="mt-4 flex gap-2">
