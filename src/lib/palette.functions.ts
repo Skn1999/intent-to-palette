@@ -1,0 +1,78 @@
+import { createServerFn } from "@tanstack/react-start";
+import { z } from "zod";
+
+const InputSchema = z.object({
+  intent: z.string().max(4000),
+  mode: z.enum(["product", "visual"]),
+  images: z.array(z.string().startsWith("data:image/")).max(6),
+  refine: z.string().max(200).optional(),
+  previous: z.string().max(4000).optional(),
+});
+
+export const PaletteSchema = z.object({
+  name: z.string(),
+  rationale: z.string(),
+  colors: z.array(
+    z.object({
+      name: z.string(),
+      hex: z.string(),
+      role: z.string(),
+      reason: z.string(),
+    }),
+  ),
+});
+export type Palette = z.infer<typeof PaletteSchema>;
+
+export const generatePalette = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => InputSchema.parse(d))
+  .handler(async ({ data }) => {
+    const apiKey = process.env.LOVABLE_API_KEY;
+    if (!apiKey) throw new Error("AI is not configured.");
+    if (!data.intent.trim() && data.images.length === 0)
+      throw new Error("Describe your intent or add an image.");
+
+    const { createOpenAI } = await import("@ai-sdk/openai");
+    const { streamText, Output } = await import("ai");
+    const provider = createOpenAI({
+      baseURL: "https://ai.gateway.lovable.dev/v1",
+      apiKey,
+      headers: { "Lovable-API-Key": apiKey, "X-Lovable-AIG-SDK": "vercel-ai-sdk" },
+    });
+
+    const roles =
+      data.mode === "product"
+        ? "Return 8 colors with roles exactly: primary, secondary, accent, background, surface, text, success, error. Ensure text on background and white/text on primary meet WCAG AA."
+        : "Return 6 colors for brand/visual work with roles like dominant, secondary, accent, highlight, neutral light, neutral dark.";
+
+    let prompt = `Design intent: ${data.intent || "(none, infer from images)"}\n`;
+    if (data.previous) prompt += `\nPrevious palette (JSON): ${data.previous}\nRefinement request: ${data.refine}. Keep the spirit but apply the change.\n`;
+
+    const content: Array<{ type: "text"; text: string } | { type: "image"; image: string }> = [
+      { type: "text", text: prompt },
+      ...data.images.map((image) => ({ type: "image" as const, image })),
+    ];
+
+    const result = streamText({
+      model: provider.responses("openai/gpt-6-astra"),
+      system: `You are a senior color designer. Translate the user's intent and reference images into a cohesive, usable palette. Draw real cues from the images (dominant hues, mood, lighting). ${roles} Hex values must be 6-digit uppercase like #1A2B3C. Rationale: 2-3 sentences tying choices to intent and images. Each reason: one short sentence.`,
+      messages: [{ role: "user", content }],
+      output: Output.object({ schema: PaletteSchema }),
+      providerOptions: {
+        openai: {
+          store: false,
+          forceReasoning: true,
+          reasoningEffort: "low",
+          reasoningSummary: "auto",
+          include: ["reasoning.encrypted_content"],
+        },
+      },
+    });
+    try {
+      return (await result.output) as Palette;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      if (/429/.test(msg)) throw new Error("Too many requests — wait a moment and try again.");
+      if (/402/.test(msg)) throw new Error("AI credits ran out. Add credits in Settings → Plans & credits.");
+      throw new Error("Couldn't generate a palette. Please try again.");
+    }
+  });
