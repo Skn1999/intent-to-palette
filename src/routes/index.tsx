@@ -2,7 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, Copy, History, ImagePlus, Loader2, Moon, ShieldCheck, Sparkles, Sun, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, FolderOpen, History, ImagePlus, Loader2, Moon, Save, ShieldCheck, Sparkles, Sun, Trash2, X } from "lucide-react";
+import { loadWorks, removeVersion, storeWorks, upsertWork, type Work } from "@/lib/works";
 import { Button } from "@/components/ui/button";
 import { generatePalette, type Palette } from "@/lib/palette.functions";
 import { contrast, fixWcag, readableOn, slug } from "@/lib/color";
@@ -77,6 +78,69 @@ function Index() {
       className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
       {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
     </button>
+  );
+
+  const [works, setWorks] = useState<Work[]>([]);
+  const [workId, setWorkId] = useState<string | null>(null);
+  const [workName, setWorkName] = useState("");
+  useEffect(() => { setWorks(loadWorks()); }, []);
+  const commitWorks = (w: Work[]) => { setWorks(w); storeWorks(w); };
+
+  function saveWork() {
+    const name = workName.trim();
+    if (!name) { toast.error("Give your work a name"); return; }
+    const id = workId ?? crypto.randomUUID();
+    try {
+      commitWorks(upsertWork(works, { id, name, intent, mode, history, savedAt: Date.now() }));
+      setWorkId(id);
+      toast.success(`Saved "${name}"`);
+    } catch {
+      toast.error("Couldn't save — browser storage is full");
+    }
+  }
+  function openWork(w: Work) {
+    setWorkId(w.id); setWorkName(w.name); setIntent(w.intent); setMode(w.mode);
+    setHistory(w.history); setCurrent(w.history.length - 1); setSelected(0); setImages([]);
+  }
+  function deleteWork(w: Work) {
+    if (!confirm(`Delete "${w.name}"?`)) return;
+    commitWorks(works.filter((x) => x.id !== w.id));
+    if (w.id === workId) { setWorkId(null); setWorkName(""); }
+    toast.success("Work deleted");
+  }
+  function newWork() {
+    setWorkId(null); setWorkName(""); setIntent(""); setImages([]); setHistory([]); setCurrent(-1);
+  }
+  function deleteVersion(i: number) {
+    const r = removeVersion(history, current, i);
+    setHistory(r.history); setCurrent(r.current); setSelected(0);
+  }
+
+  const savedList = works.length > 0 && (
+    <div>
+      <p className="mb-2 flex items-center gap-2 text-xs font-medium text-muted-foreground"><FolderOpen className="h-3.5 w-3.5" />Saved work · {works.length}</p>
+      <div className="space-y-1">
+        {works.map((w) => {
+          const last = w.history.at(-1);
+          return (
+            <div key={w.id} role="button" tabIndex={0} onClick={() => openWork(w)}
+              className={`group/w flex cursor-pointer items-center gap-2 rounded-md border px-2 py-1.5 transition-colors ${w.id === workId ? "border-ring bg-secondary" : "border-transparent hover:bg-secondary/60"}`}>
+              <div className="flex h-6 w-6 shrink-0 flex-wrap overflow-hidden rounded">
+                {last?.palette.colors.slice(0, 4).map((c, j) => <div key={j} className="h-1/2 w-1/2" style={{ background: c.hex }} />)}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm">{w.name}</p>
+                <p className="text-[11px] text-muted-foreground">{w.history.length} version{w.history.length === 1 ? "" : "s"}</p>
+              </div>
+              <button aria-label={`Delete ${w.name}`} onClick={(e) => { e.stopPropagation(); deleteWork(w); }}
+                className="rounded p-1 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/w:opacity-100">
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 
   const push = (p: Palette, label: string) => {
@@ -198,6 +262,7 @@ function Index() {
           <h1 className="mb-2 text-center text-4xl md:text-5xl">Say what it should <em className="text-accent">feel</em> like.</h1>
           <p className="mb-8 text-center text-sm text-muted-foreground">Describe your intent, add references, get a palette.</p>
           <div className="rounded-xl border border-border bg-card p-5 shadow-xl shadow-foreground/5">{form}</div>
+          {works.length > 0 && <div className="mt-6 rounded-xl border border-border bg-card p-4">{savedList}</div>}
         </div>
       </main>
     );
@@ -220,7 +285,20 @@ function Index() {
           <h1 className="text-xl">Intent to Palette</h1>
           {themeBtn}
         </div>
-        <div className="flex-1 overflow-y-auto p-5">{form}</div>
+        <div className="flex-1 space-y-6 overflow-y-auto p-5">
+          <div className="space-y-2 rounded-lg border border-border p-3">
+            <p className="text-xs font-medium text-muted-foreground">Save work</p>
+            <div className="flex gap-1.5">
+              <input value={workName} onChange={(e) => setWorkName(e.target.value)} onKeyDown={(e) => e.key === "Enter" && saveWork()}
+                placeholder="Name this work"
+                className="h-8 min-w-0 flex-1 rounded-md border border-input bg-muted/50 px-2 text-sm outline-none focus:border-ring" />
+              <Button size="sm" className="h-8" onClick={saveWork}><Save className="h-3.5 w-3.5" />{workId ? "Update" : "Save"}</Button>
+            </div>
+            {workId && <button onClick={newWork} className="text-xs text-muted-foreground hover:text-foreground">+ Start new work</button>}
+          </div>
+          {form}
+          {savedList}
+        </div>
       </aside>
 
       {/* Main */}
@@ -382,13 +460,21 @@ function Index() {
           {history.map((h, i) => i).reverse().map((i) => {
             const h = history[i]!;
             return (
-              <button key={i} disabled={loading} onClick={() => { setCurrent(i); setSelected(0); }} title={`v${i + 1} · ${h.label}`}
-                className={`w-full rounded-md border text-left transition-colors ${versionsOpen ? "p-2" : "p-1"} ${i === current ? "border-ring bg-secondary" : "border-transparent hover:bg-secondary/60"}`}>
+              <div key={i} role="button" tabIndex={0} onClick={() => { if (!loading) { setCurrent(i); setSelected(0); } }} title={`v${i + 1} · ${h.label}`}
+                className={`group/v w-full cursor-pointer rounded-md border text-left transition-colors ${versionsOpen ? "p-2" : "p-1"} ${i === current ? "border-ring bg-secondary" : "border-transparent hover:bg-secondary/60"}`}>
                 <div className={`flex overflow-hidden rounded ${versionsOpen ? "h-5" : "h-6 flex-col"}`}>
                   {h.palette.colors.map((c, j) => <div key={j} className="flex-1" style={{ background: c.hex }} />)}
                 </div>
-                {versionsOpen && <p className="mt-1.5 truncate text-xs">v{i + 1} <span className="text-muted-foreground">· {h.label}</span></p>}
-              </button>
+                {versionsOpen && (
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <p className="truncate text-xs">v{i + 1} <span className="text-muted-foreground">· {h.label}</span></p>
+                    <button aria-label="Delete version" disabled={loading} onClick={(e) => { e.stopPropagation(); deleteVersion(i); }}
+                      className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/v:opacity-100">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
