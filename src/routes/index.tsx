@@ -105,8 +105,7 @@ function Index() {
   return (
     <main className="mx-auto max-w-6xl px-6 py-12 md:py-20">
       <header className="mb-12">
-        <p className="text-xs font-medium uppercase tracking-[0.25em] text-muted-foreground">Intent → Palette</p>
-        <h1 className="mt-3 max-w-3xl text-5xl leading-[1.05] md:text-7xl">
+        <h1 className="max-w-3xl text-5xl leading-[1.05] md:text-7xl">
           Say what it should <em className="text-accent">feel</em> like.
         </h1>
       </header>
