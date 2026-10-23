@@ -26,7 +26,7 @@ export type Palette = z.infer<typeof PaletteSchema>;
 export const generatePalette = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
   .handler(async ({ data }) => {
-    const apiKey = process.env.LOVABLE_API_KEY;
+    const apiKey = process.env['LOVABLE_API_KEY'];
     if (!apiKey) throw new Error("AI is not configured.");
     if (!data.intent.trim() && data.images.length === 0)
       throw new Error("Describe your intent or add an image.");

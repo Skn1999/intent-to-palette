@@ -47,7 +47,7 @@ function Index() {
   const [images, setImages] = useState<string[]>([]);
   const [history, setHistory] = useState<{ palette: Palette; label: string }[]>([]);
   const [current, setCurrent] = useState(-1);
-  const palette = current >= 0 ? history[current].palette : null;
+  const palette = current >= 0 ? history[current]!.palette : null;
   const push = (p: Palette, label: string) => {
     setHistory((h) => [...h, { palette: p, label }]);
     setCurrent(history.length);
@@ -85,7 +85,7 @@ function Index() {
   function fixAccess() {
     if (!palette) return;
     const fixed = { ...palette, colors: fixWcag(palette.colors) };
-    if (fixed.colors.every((c, i) => c.hex === palette.colors[i]?.hex)) return toast.success("Already WCAG AA compliant");
+    if (fixed.colors.every((c, i) => c.hex === palette.colors[i]?.hex)) { toast.success("Already WCAG AA compliant"); return; }
     push(fixed, "WCAG fixed");
     toast.success("Adjusted colors to meet WCAG AA");
   }
