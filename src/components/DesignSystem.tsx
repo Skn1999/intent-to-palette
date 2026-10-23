@@ -149,8 +149,6 @@ export function DesignSystem({ palette }: { palette: Palette }) {
         <Button size="sm" variant="secondary" title="Open with the Sketch Palettes plugin" onClick={() => downloadText(JSON.stringify(toSketchPalette(palette), null, 2), `${file}.sketchpalette`, "application/json")}><Download className="h-3.5 w-3.5" />Sketch palette</Button>
       </section>
       <p className="-mt-6 px-1 text-xs text-muted-foreground">Figma: import the JSON with the Tokens Studio plugin (or any variables-import plugin). Sketch: open the .sketchpalette with the Sketch Palettes plugin.</p>
-      <section className="hidden">
-      </section>
     </div>
   );
 }
