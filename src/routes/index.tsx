@@ -183,11 +183,12 @@ function Index() {
 
   if (!started) {
     return (
-      <main className="flex min-h-screen items-center justify-center px-6 py-16">
+      <main className="relative flex min-h-screen items-center justify-center px-6 py-16">
+        <div className="absolute right-4 top-4">{themeBtn}</div>
         <div className="w-full max-w-lg animate-in fade-in zoom-in-95 duration-500">
           <h1 className="mb-2 text-center text-4xl md:text-5xl">Say what it should <em className="text-accent">feel</em> like.</h1>
           <p className="mb-8 text-center text-sm text-muted-foreground">Describe your intent, add references, get a palette.</p>
-          <div className="rounded-xl border border-border bg-card p-5 shadow-2xl shadow-background">{form}</div>
+          <div className="rounded-xl border border-border bg-card p-5 shadow-xl shadow-foreground/5">{form}</div>
         </div>
       </main>
     );
@@ -206,8 +207,9 @@ function Index() {
     <div className="flex h-screen overflow-hidden">
       {/* Sidebar */}
       <aside className="flex w-80 shrink-0 flex-col border-r border-border bg-card animate-in slide-in-from-left-8 fade-in duration-500">
-        <div className="border-b border-border px-5 py-4">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <h1 className="text-xl">Intent to Palette</h1>
+          {themeBtn}
         </div>
         <div className="flex-1 overflow-y-auto p-5">{form}</div>
       </aside>
