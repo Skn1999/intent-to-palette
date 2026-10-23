@@ -10,3 +10,4 @@
 <!-- LOVABLE:END -->
 
 - AI palette generation runs in a server function (src/lib/palette.functions.ts) via Lovable AI Gateway with a Zod output schema; keeps the API key server-side.
+- WCAG fixing is deterministic client-side code in src/lib/color.ts (no AI call), so results are predictable and covered by tests.
