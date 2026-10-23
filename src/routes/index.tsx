@@ -2,10 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Copy, ImagePlus, Loader2, X } from "lucide-react";
+import { Copy, ImagePlus, Loader2, ShieldCheck, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generatePalette, type Palette } from "@/lib/palette.functions";
-import { contrast, readableOn, slug } from "@/lib/color";
+import { contrast, fixWcag, readableOn, slug } from "@/lib/color";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -45,7 +45,13 @@ function Index() {
   const [intent, setIntent] = useState("");
   const [mode, setMode] = useState<"product" | "visual">("product");
   const [images, setImages] = useState<string[]>([]);
-  const [palette, setPalette] = useState<Palette | null>(null);
+  const [history, setHistory] = useState<{ palette: Palette; label: string }[]>([]);
+  const [current, setCurrent] = useState(-1);
+  const palette = current >= 0 ? history[current].palette : null;
+  const push = (p: Palette, label: string) => {
+    setHistory((h) => [...h, { palette: p, label }]);
+    setCurrent(history.length);
+  };
   const [loading, setLoading] = useState(false);
   const [drag, setDrag] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -63,7 +69,7 @@ function Index() {
       const p = await gen({
         data: { intent, mode, images, refine, previous: refine && palette ? JSON.stringify(palette) : undefined },
       });
-      setPalette(p);
+      push(p, refine ?? (history.length ? "Regenerated" : "Original"));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Something went wrong");
     } finally {
@@ -75,6 +81,14 @@ function Index() {
     navigator.clipboard.writeText(t);
     toast.success(`Copied ${label}`);
   };
+
+  function fixAccess() {
+    if (!palette) return;
+    const fixed = { ...palette, colors: fixWcag(palette.colors) };
+    if (fixed.colors.every((c, i) => c.hex === palette.colors[i].hex)) return toast.success("Already WCAG AA compliant");
+    push(fixed, "WCAG fixed");
+    toast.success("Adjusted colors to meet WCAG AA");
+  }
 
   const byRole = (r: string) => palette?.colors.find((c) => c.role.toLowerCase().includes(r))?.hex;
   const bg = byRole("background") ?? palette?.colors.at(-1)?.hex ?? "#FFFFFF";
@@ -167,6 +181,26 @@ function Index() {
             </div>
           ) : (
             <div className={`space-y-10 transition-opacity ${loading ? "opacity-50" : ""}`}>
+              {history.length > 1 && (
+                <div>
+                  <p className="mb-2 text-xs font-medium uppercase tracking-[0.2em] text-muted-foreground">Versions</p>
+                  <div className="flex gap-2 overflow-x-auto pb-1">
+                    {history.map((h, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setCurrent(i)}
+                        className={`shrink-0 rounded-sm border p-1.5 text-left transition-colors ${i === current ? "border-foreground" : "border-border hover:border-muted-foreground"}`}
+                      >
+                        <div className="flex h-6 w-28 overflow-hidden rounded-sm">
+                          {h.palette.colors.map((c, j) => <div key={j} className="flex-1" style={{ background: c.hex }} />)}
+                        </div>
+                        <p className="mt-1 text-[11px]">v{i + 1} · <span className="text-muted-foreground">{h.label}</span></p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <h2 className="text-4xl">{palette.name}</h2>
                 <p className="mt-3 max-w-2xl text-muted-foreground">{palette.rationale}</p>
@@ -192,7 +226,11 @@ function Index() {
                     <div className="h-10 w-10 shrink-0 rounded-sm" style={{ background: c.hex }} />
                     <div className="min-w-0">
                       <p className="text-sm font-medium">{c.name} <span className="text-muted-foreground">· {c.role}</span></p>
-                      <p className="text-xs text-muted-foreground">{c.reason}</p>
+                      <div className="mt-1.5 flex flex-wrap gap-1">
+                        {c.usage.map((u) => (
+                          <span key={u} className="rounded-sm bg-secondary px-1.5 py-0.5 text-[11px] text-secondary-foreground">{u}</span>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -235,6 +273,7 @@ function Index() {
                 {REFINES.map((r) => (
                   <Button key={r} variant="outline" size="sm" disabled={loading} onClick={() => run(r)}>{r}</Button>
                 ))}
+                <Button size="sm" disabled={loading} onClick={fixAccess}><ShieldCheck className="h-3 w-3" />Fix WCAG Accessibility</Button>
                 <span className="mx-2 w-px bg-border" />
                 <Button variant="secondary" size="sm" onClick={() => copy(exportCss(), "CSS variables")}><Copy className="h-3 w-3" />CSS</Button>
                 <Button variant="secondary" size="sm" onClick={() => copy(exportTw(), "Tailwind colors")}><Copy className="h-3 w-3" />Tailwind</Button>
