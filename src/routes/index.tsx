@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, Copy, History, ImagePlus, Loader2, ShieldCheck, Sparkles, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, History, ImagePlus, Loader2, Moon, ShieldCheck, Sparkles, Sun, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { generatePalette, type Palette } from "@/lib/palette.functions";
 import { contrast, fixWcag, readableOn, slug } from "@/lib/color";
@@ -66,6 +66,18 @@ function Index() {
   const fileRef = useRef<HTMLInputElement>(null);
   const palette = current >= 0 ? history[current]!.palette : null;
   const started = history.length > 0;
+  const [dark, setDark] = useState(false);
+  useEffect(() => { setDark(localStorage.getItem("theme") === "dark"); }, []);
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", dark);
+    localStorage.setItem("theme", dark ? "dark" : "light");
+  }, [dark]);
+  const themeBtn = (
+    <button aria-label="Toggle theme" onClick={() => setDark((d) => !d)}
+      className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground">
+      {dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </button>
+  );
 
   const push = (p: Palette, label: string) => {
     setHistory((h) => [...h, { palette: p, label }]);
