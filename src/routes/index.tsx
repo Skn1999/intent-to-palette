@@ -264,7 +264,38 @@ function Index() {
           <h1 className="mb-2 text-center text-4xl md:text-5xl">Say what it should <em className="text-accent">feel</em> like.</h1>
           <p className="mb-8 text-center text-sm text-muted-foreground">Describe your intent, add references, get a palette.</p>
           <div className="rounded-xl border border-border bg-card p-5 shadow-xl shadow-foreground/5">{form}</div>
-          {works.length > 0 && <div className="mt-6 rounded-xl border border-border bg-card p-4">{savedList}</div>}
+          {works.length > 0 && (
+            <section className="mt-8" aria-labelledby="past-projects">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 id="past-projects" className="text-xl">Past projects</h2>
+                <span className="text-xs text-muted-foreground">{works.length} saved</span>
+              </div>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {works.map((work) => (
+                  <div key={work.id} className="group relative overflow-hidden rounded-lg border border-border bg-card transition-colors hover:border-ring">
+                    <Button variant="ghost" onClick={() => openWork(work)} aria-label={`Continue ${work.name}`}
+                      className="h-auto w-full flex-col items-stretch gap-0 rounded-none p-0 text-left hover:bg-secondary/50">
+                      <div className="grid h-20 grid-cols-4 overflow-hidden bg-muted" aria-hidden="true">
+                        {work.history.at(-1)?.palette.colors.slice(0, 4).map((color, i) => (
+                          <div key={i} style={{ background: color.hex }} />
+                        ))}
+                      </div>
+                      <div className="min-w-0 p-3 pr-10">
+                        <p className="truncate text-sm font-medium">{work.name}</p>
+                        <p className="mt-1 text-xs font-normal text-muted-foreground">
+                          {work.mode === "product" ? "Product UI" : "Visual / Brand"} · {work.history.length} version{work.history.length === 1 ? "" : "s"}
+                        </p>
+                      </div>
+                    </Button>
+                    <Button variant="ghost" size="icon" aria-label={`Delete ${work.name}`} onClick={() => deleteWork(work)}
+                      className="absolute bottom-3 right-2 h-7 w-7 text-muted-foreground hover:text-destructive">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
         </div>
       </main>
     );
