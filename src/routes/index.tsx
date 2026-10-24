@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
+import { extractColors } from "@/lib/extract";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Check, ChevronLeft, ChevronRight, Copy, FolderOpen, History, ImagePlus, Loader2, Moon, Save, ShieldCheck, Sparkles, Sun, Trash2, X } from "lucide-react";
@@ -160,7 +161,8 @@ function Index() {
     if (!intent.trim() && images.length === 0) { toast.error("Describe your intent or add an image"); return; }
     setLoading(true);
     try {
-      const p = await gen({ data: { intent, mode, images, refine, previous: refine && palette ? JSON.stringify(palette) : undefined } });
+      const imageColors = images.length ? await extractColors(images) : undefined;
+      const p = await gen({ data: { intent, mode, images, imageColors, refine, previous: refine && palette ? JSON.stringify(palette) : undefined } });
       push(p, refine ?? (history.length ? "Regenerated" : "Original"));
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Something went wrong");

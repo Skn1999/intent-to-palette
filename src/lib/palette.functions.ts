@@ -5,6 +5,7 @@ const InputSchema = z.object({
   intent: z.string().max(4000),
   mode: z.enum(["product", "visual"]),
   images: z.array(z.string().startsWith("data:image/")).max(6),
+  imageColors: z.array(z.object({ hex: z.string().regex(/^#[0-9A-F]{6}$/i), share: z.number() })).max(12).optional(),
   refine: z.string().max(200).optional(),
   previous: z.string().max(4000).optional(),
 });
@@ -45,6 +46,8 @@ export const generatePalette = createServerFn({ method: "POST" })
         : "Return 6 colors for brand/visual work with roles like dominant, secondary, accent, highlight, neutral light, neutral dark.";
 
     let prompt = `Design intent: ${data.intent || "(none, infer from images)"}\n`;
+    if (data.imageColors?.length)
+      prompt += `\nColors measured from the user's reference images (hex, % of pixels): ${data.imageColors.map((c) => `${c.hex} ${c.share}%`).join(", ")}.\nBuild the palette from these measured tones: reuse or closely adjust them for the roles (staying within the same hue family), only shifting lightness/saturation as needed for contrast. Let the intent decide which tones lead. Do not invent hues absent from the images unless a role (e.g. error) requires it.\n`;
     if (data.previous) prompt += `\nPrevious palette (JSON): ${data.previous}\nRefinement request: ${data.refine}. Keep the spirit but apply the change.\n`;
 
     const content: Array<{ type: "text"; text: string } | { type: "image"; image: string }> = [
