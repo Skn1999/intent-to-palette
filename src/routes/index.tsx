@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { generatePalette, type Palette } from "@/lib/palette.functions";
 import { contrast, fixWcag, gradientCss, readableOn, slug, syncGradients } from "@/lib/color";
 import { BrandPreviews } from "@/components/BrandPreviews";
+import { download, paletteToSvg, svgToPng } from "@/lib/figma";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -505,6 +506,13 @@ function Index() {
                 <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(`colors: {\n${palette!.colors.map((c) => `  "${slug(c.role)}": "${c.hex}",`).join("\n")}\n}${palette!.gradients?.length ? `,\nbackgroundImage: {\n${palette!.gradients.map((g) => `  "${slug(g.name)}": "${gradientCss(g)}",`).join("\n")}\n}` : ""}`, "Tailwind colors")}>Tailwind</Button>
                 <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(JSON.stringify(palette, null, 2), "JSON")}>JSON</Button>
               </div>
+              <p className="mb-2 mt-3 text-xs text-muted-foreground">Figma / FigJam</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(paletteToSvg(palette!), "Swatch sheet — paste into Figma")}>Copy</Button>
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => download(new Blob([paletteToSvg(palette!)], { type: "image/svg+xml" }), `${slug(palette!.name)}.svg`)}>SVG</Button>
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={async () => { try { download(await svgToPng(paletteToSvg(palette!)), `${slug(palette!.name)}.png`); } catch { toast.error("Couldn't create PNG"); } }}>PNG</Button>
+              </div>
+              <p className="mt-1.5 text-[11px] text-muted-foreground">Copy, then Cmd/Ctrl+V in Figma for editable swatches.</p>
             </div>
           </div>
         )}
