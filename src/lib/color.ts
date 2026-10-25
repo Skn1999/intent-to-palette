@@ -68,3 +68,17 @@ export function fixWcag<T extends C>(colors: T[]): T[] {
   }
   return out;
 }
+
+export type Gradient = { name: string; type: "linear" | "radial"; angle: number; stops: { hex: string; position: number }[]; usage: string[] };
+
+export function gradientCss(g: Gradient) {
+  const stops = [...g.stops].sort((a, b) => a.position - b.position).map((s) => `${s.hex} ${Math.round(s.position)}%`).join(", ");
+  return g.type === "radial" ? `radial-gradient(circle, ${stops})` : `linear-gradient(${Math.round(g.angle)}deg, ${stops})`;
+}
+
+/** Replace gradient stop colors that were changed in the palette (old hex -> new hex). */
+export function syncGradients(gradients: Gradient[] | undefined, before: C[], after: C[]) {
+  if (!gradients) return gradients;
+  const map = new Map(before.map((c, i) => [c.hex.toUpperCase(), after[i]?.hex ?? c.hex]));
+  return gradients.map((g) => ({ ...g, stops: g.stops.map((s) => ({ ...s, hex: map.get(s.hex.toUpperCase()) ?? s.hex })) }));
+}

@@ -21,6 +21,17 @@ export const PaletteSchema = z.object({
       usage: z.array(z.string()),
     }),
   ),
+  gradients: z
+    .array(
+      z.object({
+        name: z.string(),
+        type: z.enum(["linear", "radial"]),
+        angle: z.number(),
+        stops: z.array(z.object({ hex: z.string(), position: z.number() })),
+        usage: z.array(z.string()),
+      }),
+    )
+    .optional(),
 });
 export type Palette = z.infer<typeof PaletteSchema>;
 
@@ -57,7 +68,7 @@ export const generatePalette = createServerFn({ method: "POST" })
 
     const result = streamText({
       model: provider.responses("openai/gpt-6-astra"),
-      system: `You are a senior color designer. Translate the user's intent and reference images into a cohesive, usable palette. Draw real cues from the images (dominant hues, mood, lighting). ${roles} Hex values must be 6-digit uppercase like #1A2B3C. Rationale: 2-3 sentences tying choices to intent and images. For each color, usage: 2-4 very short usage tags (2-4 words each) saying where it fits, e.g. "Page background", "Primary buttons", "Accent highlights", "Body text", "Error states".`,
+      system: `You are a senior color designer. Translate the user's intent and reference images into a cohesive, usable palette. Draw real cues from the images (dominant hues, mood, lighting). ${roles} Hex values must be 6-digit uppercase like #1A2B3C. Rationale: 2-3 sentences tying choices to intent and images. For each color, usage: 2-4 very short usage tags (2-4 words each) saying where it fits, e.g. "Page background", "Primary buttons", "Accent highlights", "Body text", "Error states". Gradients: ONLY if the intent (or refinement) explicitly asks for gradients, return 2-4 gradients built mainly from palette hexes (2-4 stops, positions 0-100, angle in degrees, type linear or radial) with 2-3 usage tags; otherwise omit the gradients field entirely.`,
       messages: [{ role: "user", content }],
       output: Output.object({ schema: PaletteSchema }),
       providerOptions: {

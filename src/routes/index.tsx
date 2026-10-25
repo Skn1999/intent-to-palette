@@ -7,7 +7,8 @@ import { Check, ChevronLeft, ChevronRight, Copy, FolderOpen, History, ImagePlus,
 import { loadWorks, removeVersion, storeWorks, upsertWork, type Work } from "@/lib/works";
 import { Button } from "@/components/ui/button";
 import { generatePalette, type Palette } from "@/lib/palette.functions";
-import { contrast, fixWcag, readableOn, slug } from "@/lib/color";
+import { contrast, fixWcag, gradientCss, readableOn, slug, syncGradients } from "@/lib/color";
+import { BrandPreviews } from "@/components/BrandPreviews";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -175,7 +176,8 @@ function Index() {
 
   function fixAccess() {
     if (!palette) return;
-    const fixed = { ...palette, colors: fixWcag(palette.colors) };
+    const colors = fixWcag(palette.colors);
+    const fixed = { ...palette, colors, gradients: syncGradients(palette.gradients, palette.colors, colors) };
     if (fixed.colors.every((c, i) => c.hex === palette.colors[i]?.hex)) { toast.success("Already WCAG AA compliant"); return; }
     push(fixed, "WCAG fixed");
     toast.success("Adjusted colors to meet WCAG AA");
@@ -372,6 +374,23 @@ function Index() {
             ))}
           </div>
 
+          {palette!.gradients?.length ? (
+            <div>
+              <p className="mb-2 text-xs text-muted-foreground">Gradients</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {palette!.gradients.map((g, i) => (
+                  <button key={i} onClick={() => copy(`background: ${gradientCss(g)};`, g.name)} className="group overflow-hidden rounded-lg border border-border bg-card text-left transition-all hover:-translate-y-0.5">
+                    <div className="h-28" style={{ background: gradientCss(g) }} />
+                    <div className="p-3">
+                      <div className="flex items-center justify-between"><p className="text-sm font-medium">{g.name}</p><Copy className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100" /></div>
+                      <div className="mt-1.5 flex flex-wrap gap-1">{g.usage.map((u) => <span key={u} className="rounded border border-border bg-secondary px-1.5 py-0.5 text-[11px] text-secondary-foreground">{u}</span>)}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           {/* Selected detail */}
           <div className="grid gap-6 rounded-lg border border-border bg-card p-5 md:grid-cols-[1fr_1.4fr]">
             <div className="space-y-3">
@@ -419,9 +438,10 @@ function Index() {
             </div>
           </div>
 
+          {mode === "visual" && <BrandPreviews palette={palette!} />}
           {/* Preview + checks */}
           <div className="grid gap-4 md:grid-cols-2">
-            <div className="rounded-lg p-6" style={{ background: bg, color: text }}>
+            {mode === "visual" ? null : <div className="rounded-lg p-6" style={{ background: palette!.gradients?.[0] ? gradientCss(palette!.gradients[0]) : bg, color: text }}>
               <p className="text-[11px] uppercase tracking-widest opacity-60">Preview</p>
               <h3 className="mt-2 font-sans text-xl tracking-normal">Welcome aboard</h3>
               <div className="mt-4 rounded-md p-4" style={{ background: surface }}>
@@ -431,7 +451,7 @@ function Index() {
                   <span className="rounded-md px-3 py-1.5 text-sm font-medium" style={{ color: accent }}>Learn more</span>
                 </div>
               </div>
-            </div>
+            </div>}
             <div className="rounded-lg border border-border bg-card p-4 text-sm">
               <p className="mb-2 text-xs text-muted-foreground">WCAG AA (≥ 4.5)</p>
               {([
@@ -481,8 +501,8 @@ function Index() {
             <div>
               <p className="mb-2 text-xs text-muted-foreground">Export</p>
               <div className="grid grid-cols-3 gap-1.5">
-                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(`:root {\n${palette!.colors.map((c) => `  --color-${slug(c.role)}: ${c.hex};`).join("\n")}\n}`, "CSS variables")}>CSS</Button>
-                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(`colors: {\n${palette!.colors.map((c) => `  "${slug(c.role)}": "${c.hex}",`).join("\n")}\n}`, "Tailwind colors")}>Tailwind</Button>
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(`:root {\n${palette!.colors.map((c) => `  --color-${slug(c.role)}: ${c.hex};`).concat((palette!.gradients ?? []).map((g) => `  --gradient-${slug(g.name)}: ${gradientCss(g)};`)).join("\n")}\n}`, "CSS variables")}>CSS</Button>
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(`colors: {\n${palette!.colors.map((c) => `  "${slug(c.role)}": "${c.hex}",`).join("\n")}\n}${palette!.gradients?.length ? `,\nbackgroundImage: {\n${palette!.gradients.map((g) => `  "${slug(g.name)}": "${gradientCss(g)}",`).join("\n")}\n}` : ""}`, "Tailwind colors")}>Tailwind</Button>
                 <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(JSON.stringify(palette, null, 2), "JSON")}>JSON</Button>
               </div>
             </div>
