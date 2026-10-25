@@ -24,3 +24,15 @@ describe("fixWcag", () => {
   it("primary label meets 4.5:1", () => expect(contrast(readableOn(hex("primary")), hex("primary"))).toBeGreaterThanOrEqual(4.5));
   it("leaves background untouched", () => expect(hex("background")).toBe("#F7F8F4"));
 });
+
+import { gradientCss, syncGradients } from "./color";
+describe("gradients", () => {
+  it("builds linear css with sorted stops", () => {
+    expect(gradientCss({ name: "a", type: "linear", angle: 90, usage: [], stops: [{ hex: "#FFFFFF", position: 100 }, { hex: "#000000", position: 0 }] }))
+      .toBe("linear-gradient(90deg, #000000 0%, #FFFFFF 100%)");
+  });
+  it("syncs stops to fixed colors", () => {
+    const g = [{ name: "a", type: "radial" as const, angle: 0, usage: [], stops: [{ hex: "#aaaaaa", position: 0 }] }];
+    expect(syncGradients(g, [{ hex: "#AAAAAA", role: "text" }], [{ hex: "#555555", role: "text" }])![0]!.stops[0]!.hex).toBe("#555555");
+  });
+});
