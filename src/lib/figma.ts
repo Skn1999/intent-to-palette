@@ -1,6 +1,6 @@
 import { readableOn, type Gradient } from "./color";
 
-type P = { name: string; colors: { name: string; hex: string; role: string }[]; gradients?: Gradient[] };
+type P = { name: string; colors: { name: string; hex: string; role: string }[]; gradients?: Gradient[] | undefined };
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 const TILE = 160, GAP = 24, PAD = 40, LABEL = 56;
