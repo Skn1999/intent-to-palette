@@ -30,10 +30,12 @@ export const PaletteSchema = z.object({
         stops: z.array(z.object({ hex: z.string(), position: z.number() })),
         usage: z.array(z.string()),
       }),
-    )
-    .optional(),
+    ),
 });
-export type Palette = z.infer<typeof PaletteSchema>;
+// Older saved palettes may omit gradients; new AI responses always include an array.
+export type Palette = Omit<z.infer<typeof PaletteSchema>, "gradients"> & {
+  gradients?: z.infer<typeof PaletteSchema>["gradients"] | undefined;
+};
 
 export const generatePalette = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => InputSchema.parse(d))
@@ -68,7 +70,7 @@ export const generatePalette = createServerFn({ method: "POST" })
 
     const result = streamText({
       model: provider.responses("openai/gpt-6-astra"),
-      system: `You are a senior color designer. Translate the user's intent and reference images into a cohesive, usable palette. Draw real cues from the images (dominant hues, mood, lighting). ${roles} Hex values must be 6-digit uppercase like #1A2B3C. Rationale: 2-3 sentences tying choices to intent and images. For each color, usage: 2-4 very short usage tags (2-4 words each) saying where it fits, e.g. "Page background", "Primary buttons", "Accent highlights", "Body text", "Error states". Gradients: ONLY if the intent (or refinement) explicitly asks for gradients, return 2-4 gradients built mainly from palette hexes (2-4 stops, positions 0-100, angle in degrees, type linear or radial) with 2-3 usage tags; otherwise omit the gradients field entirely.`,
+      system: `You are a senior color designer. Translate the user's intent and reference images into a cohesive, usable palette. Draw real cues from the images (dominant hues, mood, lighting). ${roles} Hex values must be 6-digit uppercase like #1A2B3C. Rationale: 2-3 sentences tying choices to intent and images. For each color, usage: 2-4 very short usage tags (2-4 words each) saying where it fits, e.g. "Page background", "Primary buttons", "Accent highlights", "Body text", "Error states". Gradients: ALWAYS include the gradients array. ONLY if the intent (or refinement) explicitly asks for gradients, return 2-4 gradients built mainly from palette hexes (2-4 stops, positions 0-100, angle in degrees, type linear or radial) with 2-3 usage tags; otherwise return an empty gradients array [].`,
       messages: [{ role: "user", content }],
       output: Output.object({ schema: PaletteSchema }),
       providerOptions: {
@@ -84,6 +86,7 @@ export const generatePalette = createServerFn({ method: "POST" })
     try {
       return (await result.output) as Palette;
     } catch (e) {
+      console.error("[generatePalette]", e);
       const msg = e instanceof Error ? e.message : String(e);
       if (/429/.test(msg)) throw new Error("Too many requests — wait a moment and try again.");
       if (/402/.test(msg)) throw new Error("AI credits ran out. Add credits in Settings → Plans & credits.");
