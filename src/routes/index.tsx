@@ -3,9 +3,10 @@ import { useServerFn } from "@tanstack/react-start";
 import { extractColors } from "@/lib/extract";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Check, ChevronLeft, ChevronRight, Copy, FolderOpen, History, ImagePlus, Loader2, Moon, Save, ShieldCheck, Sparkles, Sun, Trash2, X } from "lucide-react";
+import { Check, ChevronLeft, ChevronRight, Copy, FolderOpen, History, ImagePlus, PanelLeft, PanelRight, Loader2, Moon, Save, ShieldCheck, Sparkles, Sun, Trash2, X } from "lucide-react";
 import { loadWorks, removeVersion, storeWorks, upsertWork, type Work } from "@/lib/works";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { generatePalette, type Palette } from "@/lib/palette.functions";
 import { contrast, fixWcag, gradientCss, readableOn, slug, syncGradients } from "@/lib/color";
 import { BrandPreviews } from "@/components/BrandPreviews";
@@ -65,7 +66,12 @@ function Index() {
   const [current, setCurrent] = useState(-1);
   const [selected, setSelected] = useState(0);
   const [versionsOpen, setVersionsOpen] = useState(true);
+  const [leftOpen, setLeftOpen] = useState(true);
+  const [mobileIntent, setMobileIntent] = useState(false);
+  const [mobileTools, setMobileTools] = useState(false);
+  useEffect(() => { setMobileTools(false); }, [current]);
   const [loading, setLoading] = useState(false);
+  useEffect(() => { if (loading) { setMobileIntent(false); setMobileTools(false); } }, [loading]);
   const [drag, setDrag] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const palette = current >= 0 ? history[current]!.palette : null;
@@ -261,7 +267,7 @@ function Index() {
 
   if (!started) {
     return (
-      <main className="relative flex min-h-screen items-center justify-center px-6 py-16">
+      <main className="relative flex min-h-screen items-center justify-center px-4 py-16 sm:px-6">
         <div className="absolute right-4 top-4">{themeBtn}</div>
         <div className="w-full max-w-lg animate-in fade-in zoom-in-95 duration-500">
           <h1 className="mb-2 text-center text-4xl md:text-5xl">Say what it should <em className="text-accent">feel</em> like.</h1>
@@ -313,15 +319,7 @@ function Index() {
   const accent = byRole("accent") ?? primary;
   const [r, g, b] = hexToRgb(sel.hex);
 
-  return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
-      <aside className="flex w-80 shrink-0 flex-col border-r border-border bg-card animate-in slide-in-from-left-8 fade-in duration-500">
-        <div className="flex items-center justify-between border-b border-border px-5 py-4">
-          <h1 className="text-xl">Intent to Palette</h1>
-          {themeBtn}
-        </div>
-        <div className="flex-1 space-y-6 overflow-y-auto p-5">
+  const leftBody = (<>
           <div className="space-y-2 rounded-lg border border-border p-3">
             <p className="text-xs font-medium text-muted-foreground">Save work</p>
             <div className="flex gap-1.5">
@@ -334,17 +332,100 @@ function Index() {
           </div>
           {form}
           {savedList}
+  </>);
+  const tools = (versionsOpen: boolean) => (<>
+        {versionsOpen && (
+          <div className="space-y-4 border-b border-border p-3">
+            <div>
+              <p className="mb-2 text-xs text-muted-foreground">Refine</p>
+              <div className="flex flex-wrap gap-1.5">
+                {REFINES.map((x) => <Button key={x} variant="outline" size="sm" className="h-7 px-2 text-xs" disabled={loading} onClick={() => run(x)}>{x}</Button>)}
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-xs text-muted-foreground">Export</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(`:root {\n${palette!.colors.map((c) => `  --color-${slug(c.role)}: ${c.hex};`).concat((palette!.gradients ?? []).map((g) => `  --gradient-${slug(g.name)}: ${gradientCss(g)};`)).join("\n")}\n}`, "CSS variables")}>CSS</Button>
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(`colors: {\n${palette!.colors.map((c) => `  "${slug(c.role)}": "${c.hex}",`).join("\n")}\n}${palette!.gradients?.length ? `,\nbackgroundImage: {\n${palette!.gradients.map((g) => `  "${slug(g.name)}": "${gradientCss(g)}",`).join("\n")}\n}` : ""}`, "Tailwind colors")}>Tailwind</Button>
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(JSON.stringify(palette, null, 2), "JSON")}>JSON</Button>
+              </div>
+              <p className="mb-2 mt-3 text-xs text-muted-foreground">Figma / FigJam</p>
+              <div className="grid grid-cols-3 gap-1.5">
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(paletteToSvg(palette!), "Swatch sheet — paste into Figma")}>Copy</Button>
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => download(new Blob([paletteToSvg(palette!)], { type: "image/svg+xml" }), `${slug(palette!.name)}.svg`)}>SVG</Button>
+                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={async () => { try { download(await svgToPng(paletteToSvg(palette!)), `${slug(palette!.name)}.png`); } catch { toast.error("Couldn't create PNG"); } }}>PNG</Button>
+              </div>
+              <p className="mt-1.5 text-[11px] text-muted-foreground">Copy, then Cmd/Ctrl+V in Figma for editable swatches.</p>
+            </div>
+          </div>
+        )}
+        {versionsOpen && <p className="flex items-center gap-2 px-3 pt-3 text-xs text-muted-foreground"><History className="h-3.5 w-3.5" />Versions · {history.length}</p>}
+        <div className="flex-1 space-y-1.5 overflow-y-auto p-2">
+          {history.map((h, i) => i).reverse().map((i) => {
+            const h = history[i]!;
+            return (
+              <div key={i} role="button" tabIndex={0} onClick={() => { if (!loading) { setCurrent(i); setSelected(0); } }} title={`v${i + 1} · ${h.label}`}
+                className={`group/v w-full cursor-pointer rounded-md border text-left transition-colors ${versionsOpen ? "p-2" : "p-1"} ${i === current ? "border-ring bg-secondary" : "border-transparent hover:bg-secondary/60"}`}>
+                <div className={`flex overflow-hidden rounded ${versionsOpen ? "h-5" : "h-6 flex-col"}`}>
+                  {h.palette.colors.map((c, j) => <div key={j} className="flex-1" style={{ background: c.hex }} />)}
+                </div>
+                {versionsOpen && (
+                  <div className="mt-1.5 flex items-center justify-between">
+                    <p className="truncate text-xs">v{i + 1} <span className="text-muted-foreground">· {h.label}</span></p>
+                    <button aria-label="Delete version" disabled={loading} onClick={(e) => { e.stopPropagation(); deleteVersion(i); }}
+                      className="rounded p-0.5 text-muted-foreground transition-opacity hover:text-destructive md:opacity-0 md:group-hover/v:opacity-100">
+                      <Trash2 className="h-3 w-3" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
+  </>);
+  return (
+    <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
+      {/* Mobile top bar */}
+      <div className="flex items-center justify-between gap-2 border-b border-border bg-card px-3 py-2 md:hidden">
+        <Button variant="ghost" size="sm" onClick={() => setMobileIntent(true)}><PanelLeft className="h-4 w-4" />Intent</Button>
+        <h1 className="truncate text-base">Intent to Palette</h1>
+        <div className="flex items-center gap-1">{themeBtn}<Button variant="ghost" size="sm" onClick={() => setMobileTools(true)}>Tools<PanelRight className="h-4 w-4" /></Button></div>
+      </div>
+      <Sheet open={mobileIntent} onOpenChange={setMobileIntent}>
+        <SheetContent side="left" className="w-[88vw] max-w-sm overflow-y-auto p-5">
+          <SheetHeader className="mb-4 p-0"><SheetTitle className="text-left text-xl">Intent</SheetTitle></SheetHeader>
+          <div className="space-y-6">{leftBody}</div>
+        </SheetContent>
+      </Sheet>
+      <Sheet open={mobileTools} onOpenChange={setMobileTools}>
+        <SheetContent side="right" className="flex w-[85vw] max-w-xs flex-col p-0">
+          <SheetHeader className="border-b border-border p-4"><SheetTitle className="text-left text-base">Controls</SheetTitle></SheetHeader>
+          <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{tools(true)}</div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Sidebar */}
+      <aside className={`hidden shrink-0 flex-col border-r border-border bg-card transition-[width] duration-300 md:flex ${leftOpen ? "w-80" : "w-12"}`}>
+        <div className="flex items-center justify-between border-b border-border px-3 py-4">
+          {leftOpen && <h1 className="pl-2 text-xl">Intent to Palette</h1>}
+          <div className={`flex items-center gap-1 ${leftOpen ? "" : "flex-col"}`}>
+            {leftOpen && themeBtn}
+            <button aria-label="Toggle sidebar" onClick={() => setLeftOpen((o) => !o)} className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground">
+              {leftOpen ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+            </button>
+          </div>
+        </div>
+        {leftOpen && <div className="flex-1 space-y-6 overflow-y-auto p-5">{leftBody}</div>}
       </aside>
 
       {/* Main */}
-      <div className="relative flex-1 overflow-hidden">
+      <div className="relative min-h-0 flex-1 overflow-hidden">
       <main className="h-full overflow-y-auto animate-in fade-in duration-700">
-        <div className="mx-auto max-w-5xl space-y-8 px-8 py-8">
+        <div className="mx-auto max-w-5xl space-y-8 px-4 py-6 md:px-8 md:py-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-xs text-muted-foreground">v{current + 1} · {history[current]!.label}</p>
-              <h2 className="mt-1 text-3xl">{palette!.name}</h2>
+              <h2 className="mt-1 text-2xl md:text-3xl">{palette!.name}</h2>
               <p className="mt-2 max-w-2xl text-sm text-muted-foreground">{palette!.rationale}</p>
             </div>
             <Button size="sm" variant="secondary" disabled={loading} onClick={fixAccess}><ShieldCheck className="h-3.5 w-3.5" />Fix WCAG Accessibility</Button>
@@ -484,62 +565,19 @@ function Index() {
       </div>
 
       {/* Right tray */}
-      <aside className={`flex shrink-0 flex-col border-l border-border bg-card transition-[width] duration-300 ${versionsOpen ? "w-64" : "w-12"}`}>
+      <aside className={`hidden shrink-0 flex-col border-l border-border bg-card transition-[width] duration-300 md:flex ${versionsOpen ? "w-64" : "w-12"}`}>
         <div className="flex items-center justify-between border-b border-border px-3 py-4">
           {versionsOpen && <span className="text-sm font-medium">Controls</span>}
           <button aria-label="Toggle panel" onClick={() => setVersionsOpen((o) => !o)} className="rounded p-1 text-muted-foreground hover:bg-secondary hover:text-foreground">
             {versionsOpen ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </button>
         </div>
-        {versionsOpen && (
-          <div className="space-y-4 border-b border-border p-3">
-            <div>
-              <p className="mb-2 text-xs text-muted-foreground">Refine</p>
-              <div className="flex flex-wrap gap-1.5">
-                {REFINES.map((x) => <Button key={x} variant="outline" size="sm" className="h-7 px-2 text-xs" disabled={loading} onClick={() => run(x)}>{x}</Button>)}
-              </div>
-            </div>
-            <div>
-              <p className="mb-2 text-xs text-muted-foreground">Export</p>
-              <div className="grid grid-cols-3 gap-1.5">
-                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(`:root {\n${palette!.colors.map((c) => `  --color-${slug(c.role)}: ${c.hex};`).concat((palette!.gradients ?? []).map((g) => `  --gradient-${slug(g.name)}: ${gradientCss(g)};`)).join("\n")}\n}`, "CSS variables")}>CSS</Button>
-                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(`colors: {\n${palette!.colors.map((c) => `  "${slug(c.role)}": "${c.hex}",`).join("\n")}\n}${palette!.gradients?.length ? `,\nbackgroundImage: {\n${palette!.gradients.map((g) => `  "${slug(g.name)}": "${gradientCss(g)}",`).join("\n")}\n}` : ""}`, "Tailwind colors")}>Tailwind</Button>
-                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(JSON.stringify(palette, null, 2), "JSON")}>JSON</Button>
-              </div>
-              <p className="mb-2 mt-3 text-xs text-muted-foreground">Figma / FigJam</p>
-              <div className="grid grid-cols-3 gap-1.5">
-                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => copy(paletteToSvg(palette!), "Swatch sheet — paste into Figma")}>Copy</Button>
-                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={() => download(new Blob([paletteToSvg(palette!)], { type: "image/svg+xml" }), `${slug(palette!.name)}.svg`)}>SVG</Button>
-                <Button variant="secondary" size="sm" className="h-7 text-xs" onClick={async () => { try { download(await svgToPng(paletteToSvg(palette!)), `${slug(palette!.name)}.png`); } catch { toast.error("Couldn't create PNG"); } }}>PNG</Button>
-              </div>
-              <p className="mt-1.5 text-[11px] text-muted-foreground">Copy, then Cmd/Ctrl+V in Figma for editable swatches.</p>
-            </div>
-          </div>
-        )}
-        {versionsOpen && <p className="flex items-center gap-2 px-3 pt-3 text-xs text-muted-foreground"><History className="h-3.5 w-3.5" />Versions · {history.length}</p>}
-        <div className="flex-1 space-y-1.5 overflow-y-auto p-2">
-          {history.map((h, i) => i).reverse().map((i) => {
-            const h = history[i]!;
-            return (
-              <div key={i} role="button" tabIndex={0} onClick={() => { if (!loading) { setCurrent(i); setSelected(0); } }} title={`v${i + 1} · ${h.label}`}
-                className={`group/v w-full cursor-pointer rounded-md border text-left transition-colors ${versionsOpen ? "p-2" : "p-1"} ${i === current ? "border-ring bg-secondary" : "border-transparent hover:bg-secondary/60"}`}>
-                <div className={`flex overflow-hidden rounded ${versionsOpen ? "h-5" : "h-6 flex-col"}`}>
-                  {h.palette.colors.map((c, j) => <div key={j} className="flex-1" style={{ background: c.hex }} />)}
-                </div>
-                {versionsOpen && (
-                  <div className="mt-1.5 flex items-center justify-between">
-                    <p className="truncate text-xs">v{i + 1} <span className="text-muted-foreground">· {h.label}</span></p>
-                    <button aria-label="Delete version" disabled={loading} onClick={(e) => { e.stopPropagation(); deleteVersion(i); }}
-                      className="rounded p-0.5 text-muted-foreground opacity-0 transition-opacity hover:text-destructive group-hover/v:opacity-100">
-                      <Trash2 className="h-3 w-3" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+        {tools(versionsOpen)}
       </aside>
+      {/* Mobile regenerate */}
+      <Button className="fixed bottom-4 right-4 z-20 h-11 rounded-full shadow-lg md:hidden" disabled={loading} onClick={() => run()}>
+        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}Regenerate
+      </Button>
     </div>
   );
 }
