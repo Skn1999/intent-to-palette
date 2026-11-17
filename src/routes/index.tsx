@@ -11,6 +11,9 @@ import { generatePalette, type Palette } from "@/lib/palette.functions";
 import { contrast, fixWcag, gradientCss, readableOn, slug, syncGradients } from "@/lib/color";
 import { BrandPreviews } from "@/components/BrandPreviews";
 import { download, paletteToSvg, svgToPng } from "@/lib/figma";
+import shareImage from "@/assets/intent-palette-share.jpg.asset.json";
+
+const SHARE_IMAGE_URL = `https://intent-to-palette.lovable.app${shareImage.url}`;
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -21,6 +24,8 @@ export const Route = createFileRoute("/")({
       { property: "og:description", content: "Turn design intent and reference images into a usable color palette." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { property: "og:image", content: SHARE_IMAGE_URL },
+      { name: "twitter:image", content: SHARE_IMAGE_URL },
     ],
   }),
   component: Index,
